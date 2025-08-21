@@ -108,7 +108,7 @@ public class UserService  {
 //        }
 //    }
 
-    @Cacheable(value = "usersCache")
+    @Cacheable(value = "user")
     public List<UserResponse> getAllUsers() {
         try {
             List<User> users = userRepository.findAll();
