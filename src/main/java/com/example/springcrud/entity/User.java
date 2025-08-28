@@ -1,18 +1,15 @@
 package com.example.springcrud.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
 
+@Cacheable
 @Entity
 @Table(name = "users") // Good practice to explicitly name your table
-@Getter // Lombok: Generates all getters
-@Setter // Lombok: Generates all setters
+@Data
 @NoArgsConstructor // Lombok: Generates a no-argument constructor
 @ToString(exclude = "password") // Lombok: Generates toString, exclude password for security
 public class User {

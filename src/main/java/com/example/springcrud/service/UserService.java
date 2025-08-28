@@ -14,7 +14,6 @@ import com.example.springcrud.model.response.UserResponse;
 import com.example.springcrud.repository.UserRepository;
 
 import com.example.springcrud.util.JwtUtil;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
@@ -117,7 +116,7 @@ public class UserService  {
                     .map(user -> {
                         UserResponse response = new UserResponse();
                         response.setId(user.getId());
-                        response.setFullname(user.getFullname());
+                        response.setFullName(user.getFullname());
                         response.setUsername(user.getUsername());
                         response.setEmail(user.getEmail());
                         response.setRoles(user.getRoles());
@@ -150,7 +149,7 @@ public class UserService  {
         // Convert to DTO (or use a mapper like MapStruct if preferred)
         UserResponse response = new UserResponse();
         response.setId(user.getId());
-        response.setFullname(user.getFullname());
+        response.setFullName(user.getFullname());
         response.setUsername(user.getUsername());
         response.setEmail(user.getEmail());
         response.setRoles(user.getRoles());

@@ -1,13 +1,12 @@
 package com.example.springcrud.config;
 
-import com.example.springcrud.service.MyUserDetailsSerice;
+import com.example.springcrud.service.MyUserDetailsService;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -28,7 +27,7 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
 
     @Getter
-    private final MyUserDetailsSerice userDetailsService;
+    private final MyUserDetailsService userDetailsService;
 
     private static final String ROLE_ADMIN = "ADMIN";
     private static final String API_USERS_ID = "/api/users/{id}";
@@ -51,6 +50,8 @@ public class SecurityConfig {
 
                 .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for easier API testing (consider re-enabling for real apps)
                 .authorizeHttpRequests(authorize -> authorize
+
+                        .requestMatchers("/actuator/health", "/actuator/info","/actuator/**").permitAll()
                         // Allow public access to registration and login endpoints
                         .requestMatchers("/api/users/register", "/api/users/login").permitAll()
 

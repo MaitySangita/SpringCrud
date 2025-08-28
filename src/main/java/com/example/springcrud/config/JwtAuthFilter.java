@@ -1,6 +1,6 @@
 package com.example.springcrud.config;
 
-import com.example.springcrud.service.MyUserDetailsSerice;
+import com.example.springcrud.service.MyUserDetailsService;
 import com.example.springcrud.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,10 +23,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
-    private final MyUserDetailsSerice userDetailsService;
+    private final MyUserDetailsService userDetailsService;
 
     @Autowired
-    public JwtAuthFilter(JwtUtil jwtUtil, MyUserDetailsSerice userDetailsService) {
+    public JwtAuthFilter(JwtUtil jwtUtil, MyUserDetailsService userDetailsService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
     }

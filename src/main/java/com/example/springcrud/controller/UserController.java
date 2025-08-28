@@ -6,13 +6,10 @@ import com.example.springcrud.model.request.DeleteAccountRequest;
 import com.example.springcrud.model.request.LoginRequest;
 import com.example.springcrud.model.request.UpdateUserRequest;
 import com.example.springcrud.model.response.ApiResponse;
-import com.example.springcrud.entity.User;
 import com.example.springcrud.model.response.UserResponse;
 import com.example.springcrud.service.UserService;
-import com.example.springcrud.exception.UserNotFoundException;
 import com.example.springcrud.model.request.UserRequest;
 
-import com.example.springcrud.util.JwtUtil;
 import jakarta.validation.Valid; // Import for @Valid annotation
 
 import org.springframework.beans.factory.annotation.Autowired;
