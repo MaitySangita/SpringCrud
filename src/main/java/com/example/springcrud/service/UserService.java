@@ -1,12 +1,9 @@
 package com.example.springcrud.service;
 
 import com.example.springcrud.config.UserPrincipal;
-import com.example.springcrud.exception.InvalidCredentialsException;
-import com.example.springcrud.exception.InvalidInputException;
-import com.example.springcrud.exception.UserNotFoundException;
+import com.example.springcrud.exception.*;
 
 import com.example.springcrud.entity.User;
-import com.example.springcrud.exception.UserOperationException;
 import com.example.springcrud.model.request.DeleteAccountRequest;
 import com.example.springcrud.model.request.UpdateUserRequest;
 import com.example.springcrud.model.request.UserRequest;
@@ -14,24 +11,26 @@ import com.example.springcrud.model.response.UserResponse;
 import com.example.springcrud.repository.UserRepository;
 
 import com.example.springcrud.util.JwtUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
+
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 @Service
-
-public class UserService  {
+@Slf4j
+public class UserService {
 
 
     private final UserRepository userRepository;
@@ -45,17 +44,16 @@ public class UserService  {
         this.jwtUtil = jwtUtil;
     }
 
-    //---C: Registration
-    @Caching(evict = {
-            @CacheEvict(value = "users", allEntries = true),
-            @CacheEvict(value = "user", key = "#registerRequest.username"),
-            @CacheEvict(value = "userByUsername", key = "#registerRequest.username"),
-            @CacheEvict(value = "authUserDetails", key = "#registerRequest.username")
-    })
+    @CachePut(value = "usersByUsername", key = "#registerRequest.username")
     public void registerUser(UserRequest registerRequest) {
-        if (userRepository.existsByUsername(registerRequest.getUsername())) {
-            throw new UserNotFoundException("Username '" + registerRequest.getUsername() + "' is already taken.");
+        if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
+            throw new UserIsPresentException("Username '" + registerRequest.getUsername() + "' is already taken.");
         }
+
+        if (userRepository.findByEmail(registerRequest.getEmail()).isPresent()) {
+            throw new UserIsPresentException("Email '" + registerRequest.getEmail() + "' is already registered.");
+        }
+
 
         User user = new User();
         user.setFullname(registerRequest.getFullname());
@@ -64,54 +62,41 @@ public class UserService  {
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setRoles(new HashSet<>(Collections.singletonList("USER")));
 
+//        User user = User.builder()
+//                .fullname(registerRequest.getFullname())
+//                .username(registerRequest.getUsername())
+//                .email(registerRequest.getEmail())
+//                .password(passwordEncoder.encode(registerRequest.getPassword()))
+//                .roles(new HashSet<>(Collections.singletonList("USER")))
+//                .build();
+
         userRepository.save(user);
     }
 
-//    // --- R: Login / Authentication (This is for your custom /login endpoint's JSON body) ---
-//    public Optional<User> authenticateUser(String username, String rawPassword) {
-//        try {
-//            Optional<User> userOptional = userRepository.findByUsername(username);
-//
-//            if (userOptional.isPresent() && passwordEncoder.matches(rawPassword, userOptional.get().getPassword())) {
-//                return userOptional;
-//            }
-//            return Optional.empty();  // Authentication failed
-//        } catch (Exception e) {
-//            throw new UserOperationException("Error during authentication: " + e.getMessage());
-//        }
-//    }
+    // --- R: Login / Authentication (This is for your custom /login endpoint's JSON body) ---
 
     public String loginAndGetToken(String username, String rawPassword) {
-        try {
+
             Optional<User> userOptional = userRepository.findByUsername(username);
 
             if (userOptional.isEmpty() || !passwordEncoder.matches(rawPassword, userOptional.get().getPassword())) {
                 throw new InvalidCredentialsException("Invalid username or password."); // custom exception
             }
 
+
             return jwtUtil.generateToken(username);
-        } catch (Exception e) {
-            throw new UserOperationException("Error during login: " + e.getMessage());
-        }
     }
 
 
 
-    // --- R: Read (Retrieve all users) ---
-//    @Cacheable(value = "users")
-//    public List<User> getAllUsers() {
-//        try {
-//            return userRepository.findAll();
-//        } catch (Exception e) {
-//            throw new UserOperationException("Failed to fetch users: " + e.getMessage());
-//        }
-//    }
+//    @Cacheable("users")
+@Cacheable(value = "allUsers")
+public List<UserResponse> getAllUsers() {
 
-    @Cacheable(value = "user")
-    public List<UserResponse> getAllUsers() {
-        try {
             List<User> users = userRepository.findAll();
-
+            if (users.isEmpty()) {
+                throw new UserNotFoundException("No users found in the system.");
+            }
             return users.stream()
                     .map(user -> {
                         UserResponse response = new UserResponse();
@@ -122,31 +107,18 @@ public class UserService  {
                         response.setRoles(user.getRoles());
                         return response;
                     })
-                    .collect(Collectors.toList());
+                    .toList();
 
-        } catch (Exception e) {
-            throw new UserOperationException("Failed to fetch users: " + e.getMessage());
-        }
     }
 
 
     // --- R: Read (Retrieve user by ID) ---
-//    @Cacheable(value = "user", key = "#id")
-//    public Optional<User> getUserById(Long id) {
-//        try {
-//            return userRepository.findById(id);
-//        } catch (UserOperationException e) {
-//            throw new UserOperationException("Failed to fetch user: " + e.getMessage());
-//        }
-//    }
-
-    // --- R: Read (Retrieve user by ID) ---
-    @Cacheable(value = "user", key = "#id")
+    @Cacheable(value = "users", key = "#id")
     public UserResponse getUserProfileById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
 
-        // Convert to DTO (or use a mapper like MapStruct if preferred)
+
         UserResponse response = new UserResponse();
         response.setId(user.getId());
         response.setFullName(user.getFullname());
@@ -157,31 +129,10 @@ public class UserService  {
         return response;
     }
 
-//    @CacheEvict(value = {"users", "user", "userByUsername", "authUserDetails"}, allEntries = true)
-//    @CachePut(value = "userByUsername", key = "#request.username")
-//    public User updateUser(@Valid UpdateUserRequest request) {
-//        if (request == null) {
-//            throw new InvalidInputException("Invalid input");
-//        }
-//
-//        try {
-//            User existingUser = userRepository.findByUsername(request.getUsername())
-//                    .orElseThrow(() -> new UserNotFoundException("User not found with username: " + request.getUsername()));
-//
-//            existingUser.setFullname(request.getFullname());
-//            existingUser.setEmail(request.getEmail());
-//            existingUser.setPassword(passwordEncoder.encode(request.getPassword()));
-//
-//            return userRepository.save(existingUser);
-//        } catch (Exception e) {
-//            throw new UserOperationException("Failed to update user: " + e.getMessage());
-//        }
-//    }
+            //--UPDATE--
 
-    //--UPDATE--
-
-    @CacheEvict(value = {"users", "user", "userByUsername", "authUserDetails"}, allEntries = true)
-    @CachePut(value = "userByUsername", key = "#request.username")
+    @CacheEvict(value = "usersByUsername", key = "#request.username")
+    @Transactional
     public void updateUserByOwnerOrAdmin(UpdateUserRequest request, UserPrincipal loggedInUser) {
         if (request == null) {
             throw new InvalidInputException("Invalid input");
@@ -214,48 +165,13 @@ public class UserService  {
     }
 
 
-    // --- D: Delete User ---
-//    public void deleteUser(String username) {
-//        User userToDelete = userRepository.findByUsername(username)
-//                .orElseThrow(() -> new UserNotFoundException("User not found with username: " + username));
-//
-//        userRepository.delete(userToDelete);
-//    }
-
-    // --- DELETE User (for authenticated user - no path variable) ---
-//    @Caching(evict = {
-//            @CacheEvict(value = "users", allEntries = true),
-//            @CacheEvict(value = "user", key = "#request.username"),
-//            @CacheEvict(value = "userByUsername", key = "#request.username"),
-//            @CacheEvict(value = "authUserDetails", key = "#request.username")
-//    })
-//    public void deleteUser(DeleteAccountRequest request, UserPrincipal loggedInUser) {
-//
-//        try {
-//            User userToDelete = userRepository.findByUsername(request.getUsername())
-//                    .orElseThrow(() -> new UserNotFoundException("User not found with username: " + request.getUsername()));
-//
-//            // Verify the password provided in the request
-//            if (!passwordEncoder.matches(request.getPassword(), userToDelete.getPassword())) {
-//                throw new UserNotFoundException("Incorrect password provided for account deletion.");
-//            }
-//
-//            if (!request.isConfirmDeletion()) {
-//                throw new InvalidInputException("Please confirm that you understand the consequences of account deletion.");
-//            }
-//
-//            userRepository.delete(userToDelete);
-//        } catch (Exception e) {
-//            throw new UserOperationException("Failed to delete user: " + e.getMessage());
-//        }
-//    }
+        //  --DELETE--
 
     @Caching(evict = {
-            @CacheEvict(value = "users", allEntries = true),
-            @CacheEvict(value = "user", key = "#request.username"),
-            @CacheEvict(value = "userByUsername", key = "#request.username"),
-            @CacheEvict(value = "authUserDetails", key = "#request.username")
+            @CacheEvict(value = "allUsers", allEntries = true),
+            @CacheEvict(value = "usersByUsername", key = "#request.username")
     })
+    @Transactional
     public void deleteUser(DeleteAccountRequest request, UserPrincipal loggedInUser) {
 
         // Only allow self-deletion (extra protection)
@@ -271,7 +187,7 @@ public class UserService  {
         }
 
         if (!request.isConfirmDeletion()) {
-            throw new InvalidInputException("Please confirm account deletion by setting 'confirmDeletion' to true.");
+            throw new UserOperationException("Please confirm account deletion by setting 'confirmDeletion' to true.");
         }
 
         userRepository.delete(userToDelete);

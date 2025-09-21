@@ -19,15 +19,12 @@ public class MyUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Find the user by username
-        try {
             return userRepository.findByUsername(username)
                     // If found, use the static build method in UserPrincipal to create your custom UserDetails object
                     .map(UserPrincipal::build)
                     // If not found, throw the standard UsernameNotFoundException
                     .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-        } catch (Exception e) {
-            throw new UserOperationException("Error loading user: " + e.getMessage());
-        }
+
     }
 
 }

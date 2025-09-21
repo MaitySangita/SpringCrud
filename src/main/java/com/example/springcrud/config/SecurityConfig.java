@@ -33,11 +33,11 @@ public class SecurityConfig {
     private static final String API_USERS_ID = "/api/users/{id}";
 
 
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
@@ -51,26 +51,20 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for easier API testing (consider re-enabling for real apps)
                 .authorizeHttpRequests(authorize -> authorize
 
-                        .requestMatchers("/actuator/health", "/actuator/info","/actuator/**").permitAll()
-                        // Allow public access to registration and login endpoints
+                        .requestMatchers("/actuator/health", "/actuator/info", "/actuator/**").permitAll()
+
                         .requestMatchers("/api/users/register", "/api/users/login").permitAll()
 
-                        // --- Role-Based Access Control ---
                         // Only users with the 'ADMIN' role can get all users
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole(ROLE_ADMIN)
 
-                        // Only users with the 'ADMIN' role can update a user by username
-                        .requestMatchers(HttpMethod.PUT, "/api/users/update").hasAnyRole(ROLE_ADMIN,"USER")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/update").hasAnyRole(ROLE_ADMIN, "USER")
 
 
-                        .requestMatchers(HttpMethod.DELETE, "/api/users/delete-direct").hasAnyRole(ROLE_ADMIN,"USER")
-                        // Any authenticated user (ADMIN or USER) can get a single user by ID
-                        // This allows a regular user to view their own profile, for example.
-                       // .requestMatchers(HttpMethod.GET, API_USERS_ID).hasAnyRole(ROLE_ADMIN)
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/delete-direct").hasAnyRole(ROLE_ADMIN, "USER")
+
                         .requestMatchers(HttpMethod.GET, "/api/users/me").authenticated()
 
-
-                        //  .requestMatchers(HttpMethod.PUT, "api/users/{username}/roles").hasRole(ROLE_ADMIN)
 
                         // All other requests require authentication (as a fallback)
                         .anyRequest().authenticated()
@@ -79,8 +73,8 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // For REST APIs (no sessions, use tokens)
 
                 )
-                .addFilterBefore(jwtAuthFilter,UsernamePasswordAuthenticationFilter.class);
-                //.httpBasic(Customizer.withDefaults());
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        //.httpBasic(Customizer.withDefaults());
 
         return http.build();
     }

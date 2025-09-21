@@ -6,10 +6,11 @@ import lombok.*;
 import java.util.HashSet;
 import java.util.Set;
 
-@Cacheable
 @Entity
 @Table(name = "users") // Good practice to explicitly name your table
 @Data
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor // Lombok: Generates a no-argument constructor
 @ToString(exclude = "password") // Lombok: Generates toString, exclude password for security
 public class User {

@@ -94,5 +94,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(UserIsPresentException.class)
+    public ResponseEntity<Object> handle(UserIsPresentException ex, WebRequest request) {
+        Map<String, Object> body = new HashMap<>();
+        body.put(STATUS, HttpStatus.CONFLICT.value()); // 409 Conflict
+        body.put(ERROR, "Conflict");
+        body.put(MESSAGE, ex.getMessage());
 
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
 }

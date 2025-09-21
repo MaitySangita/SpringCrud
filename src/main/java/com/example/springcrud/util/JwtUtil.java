@@ -14,11 +14,6 @@ import java.util.Base64;
 @Component
 public class JwtUtil {
 
-//    private static final String SECRET_KEY = Base64.getEncoder()
-//            .encodeToString("mysecretkey1234567890mysecretkey1234567890".getBytes()); // 256-bit key
-//    private static final long EXPIRATION_TIME = 86400000; // 24 hours
-//
-//    //private final Key key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(SECRET_KEY));
 
     @Value("${JWT_SECRET}")
     private String secret;

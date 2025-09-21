@@ -28,12 +28,10 @@ public class UserController {
 
     private final UserService userService;
 
-    //private final JwtUtil jwtUtil;
 
     @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
-       // this.jwtUtil = jwtUtil;
     }
 
     // --- Registration (Create) - NOW WITH VALIDATION AND DTO ---
@@ -63,42 +61,15 @@ public class UserController {
     }
 
 
-//    // --- Retrieve All Users (Read) ---
-//    @GetMapping
-//    public ResponseEntity<?> getAllUsers() {
-//        List<User> users = userService.getAllUsers();
-//        if (users.isEmpty()) {
-//            ApiResponse response = ApiResponse.builder().message("There are no user found").build();
-//            return new ResponseEntity<>(response, HttpStatus.OK);
-//        }
-//        users.forEach(user -> user.setPassword(null)); // Remove passwords
-//        return new ResponseEntity<>(users, HttpStatus.OK);
-//    }
+
 
     @GetMapping
     public ResponseEntity<?> getAllUsers() {
         List<UserResponse> users = userService.getAllUsers();
 
-        if (users.isEmpty()) {
-            ApiResponse response = ApiResponse.builder().message("There are no users found").build();
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        }
-
         return ResponseEntity.ok(users);
     }
 
-
-    // --- Retrieve User by ID (Read) ---
-//    @GetMapping("/me")
-//    public ResponseEntity<User> getMyProfile(@AuthenticationPrincipal UserPrincipal userPrincipal) {
-//        Long id = userPrincipal.getId();
-//        return userService.getUserById(id)
-//                .map(user -> {
-//                    user.setPassword(null);
-//                    return new ResponseEntity<>(user, HttpStatus.OK);
-//                })
-//                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
-//    }
 
 
     @GetMapping("/me")
@@ -113,7 +84,6 @@ public class UserController {
     public ResponseEntity<ApiResponse> updateUser(@Valid @RequestBody UpdateUserRequest request,
                                                   @AuthenticationPrincipal UserPrincipal loggedInUser) {
 
-        // Move logic into service layer
         userService.updateUserByOwnerOrAdmin(request, loggedInUser);
 
         ApiResponse response = ApiResponse.builder()
@@ -151,7 +121,8 @@ public class UserController {
 
         userService.deleteUser(request, loggedInUser); // Ensure auth context is used
 
-        return new ResponseEntity<>(ApiResponse.builder().message("Account deleted successfully").build(), HttpStatus.NO_CONTENT);
+        ApiResponse.builder().message("Account deleted successfully").build();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
 
